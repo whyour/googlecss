@@ -1,0 +1,5 @@
+新建文件
+GUI->Remote->Add....
+Merge->Local Merge
+cmd:git push --set-upstream zbweixin master
+环境OK
