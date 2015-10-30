@@ -1,18 +1,3 @@
-// ==UserScript==
-// @name           ExternalVideoPlayer.uc.js
-// @description    调用外部播放器播放网络视频。
-// @author         ywzhaiqi
-// @namespace      ywzhaiqi@gmail.com
-// @include        main
-// @charset        UTF-8
-// @version        0.1.4
-// @homepageURL    https://github.com/ywzhaiqi/userChromeJS/tree/master/ExternalVideoPlayer
-// @reviewURL      http://bbs.kafan.cn/thread-1587228-1-1.html
-// @note           youku、悦台、网易视频、优米等调用外部播放器播放。土豆、奇艺等不支持外部播放的新页面打开 flvcd 网址。
-// @note           2013/06/22 ver0.003 增加了大量的站点，增加了二级菜单清晰度的选择。
-// @note           2013/06/21 ver0.002 修正几个错误
-// @note           2013/06/17 ver0.001 init
-// ==/UserScript==
 
 if(typeof window.externalVideoPlayer != 'undefined'){
     window.externalVideoPlayer.uninit();
@@ -32,7 +17,6 @@ if(typeof window.externalVideoPlayer != 'undefined'){
         "normal": "标清",
         "high": "高清",
         "super": "超清",
-        // "super2": "原画",   // 非全部支持
     };
 
     var PLAYER_PLS = /\bs?mplayer\b/i;  // pls 播放列表格式
