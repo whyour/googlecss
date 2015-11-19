@@ -21,11 +21,10 @@ location == "chrome://browser/content/browser.xul" && (function () {
 			file.initWithPath(completePath);
 			Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"].createInstance(Ci.nsIWebBrowserPersist).saveURI(Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService).newURI(x, null, null), null, null, null, null, null, file, null);
 			setTimeout(function () {
-				file.launch();
+				str.data = '<img src="file:///' + completePath + '">';
+                trans.setTransferData("text/html", str, str.data.length * 2);
+                Cc["@mozilla.org/widget/clipboard;1"].createInstance(Ci.nsIClipboard).setData(trans, null, 1);
 			}, 200);
-			str.data = '<img src="file:///' + completePath + '">';
-			trans.setTransferData("text/html", str, str.data.length * 2);
-			Cc["@mozilla.org/widget/clipboard;1"].createInstance(Ci.nsIClipboard).setData(trans, null, 1);
 		}, false);
 	})(contextMenu.insertBefore(document.createElement("menuitem"), document.getElementById("context-copyimage")));
 	contextMenu.addEventListener("popupshowing", function () {
