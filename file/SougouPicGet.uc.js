@@ -1,19 +1,25 @@
 //==UserScript==
 // @name           SougouPicGet.uc.js
 // @description    每次启动自动随机获取一张搜狗壁纸
+// @homepageURL    http://bbs.kafan.cn/forum-215-1.html
+// 
 //==/UserScript==
 
-var setTime = 60; //表示间隔多少分钟范围【0-60*24*10】-0到10天->越界时间不准,就不好玩了       O_O
 
+var setTime = 0; //表示间隔多少分钟范围【0-60*24*10】-0到10天                     ->越界时间不准,就不好玩了       O_O
+// father网页，只要是搜狗的有4*7张大图的应该都可以-----也可以用搜索结果，但是不能有中文，否则js失效
+var fatherurl = "http://bizhi.sogou.com/label/index/209?f=jingpintopic&from=index";
 var regexp = RegExp("<a href=\"(/detail/info/[\\d]+)\" target=\"_blank\">", "g");
 var regexp2 = RegExp("<img height=\"600\" width=\"950\" src=\"([^\"]+)\"", "g");
 var imgURL;
+
 setRileGou();
 
 function  setRileGou() {
     setTime = setTime * 60000;
     var now=getNow();
     var history=getprfDate();
+    //alert("KKK "+(now-history)+" KKK "+setTime);
     if(now-history > setTime) {
         init();
     }
@@ -35,11 +41,12 @@ function getprfDate() {
 };
 function init(){
     // 先获取这里的N张图片的随机一张的网页地址
-    var url = "http://bizhi.sogou.com/label/index/";
+    var url = fatherurl;
     var xhr=new XMLHttpRequest();
     xhr.open('GET', url, false);
     xhr.onload=function() {
         var htmls = xhr.responseText;
+
         var tmpstr, tmpcount=0;
         var randomNum = Math.round(Math.random()*28);
         while((tmpstr = regexp.exec(htmls)[1]) != null){
@@ -47,6 +54,7 @@ function init(){
             if(tmpcount == randomNum) break;
         }
         var dirURL = "http://bizhi.sogou.com"+tmpstr;
+                //alert(dirURL);
         // 使用正则获得到改网页对应的大图的地址
         var xhr2=new XMLHttpRequest();
         xhr2.open('GET', dirURL, false);
