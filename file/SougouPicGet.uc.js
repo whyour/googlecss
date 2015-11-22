@@ -8,7 +8,7 @@
 
 var setTime = 0; //表示间隔多少分钟范围【0-60*24*10】-0到10天                     ->越界时间不准,就不好玩了       O_O
 // father网页，只要是搜狗的有4*7张大图的应该都可以-----也可以用搜索结果，但是不能有中文，否则js失效
-var fatherurl = "http://bizhi.sogou.com/label/index/209?f=jingpintopic&from=index";
+var fatherurl = "http://bizhi.sogou.com/label/index/44";
 var regexp = RegExp("<a href=\"(/detail/info/[\\d]+)\" target=\"_blank\">", "g");
 var regexp2 = RegExp("<img height=\"600\" width=\"950\" src=\"([^\"]+)\"", "g");
 var imgURL;
