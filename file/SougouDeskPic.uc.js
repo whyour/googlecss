@@ -7,7 +7,7 @@
 //==/UserScript==
 var setTime = 0; //表示间隔多少分钟范围【0-60*24*10】-0到10天                     ->越界时间不准,就不好玩了       O_O
 
-var userIndex = 0;
+var userIndex = 1;
 var ALL = [
 ["http://www.netbian.com", 
 "http://www.netbian.com/e/sch/index.php?keyboard=%C3%C0%C5%AE", 
