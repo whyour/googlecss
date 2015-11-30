@@ -2,7 +2,7 @@
 使用地址:
 https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/img0/kafan.png
 https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/img1/112602.png
-https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/file/Logo_贝伦卡斯泰露.css
+https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/file/webSafe.uc.js
 git的使用方式：
 新建文件
 GUI->Remote->Add....(XXXXXXXXXXXXXXX)
