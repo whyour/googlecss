@@ -7,12 +7,12 @@
 // @license        MIT License
 // @charset        UTF-8
 // @version        2015.12.1
-// @version        2.0
+// @version        1.0
 // @reviewURL    http://bbs.kafan.cn/thread-1867072-1-1.html
 // ==/UserScript==
 var whiteList = new Array("baidu.com", "qq.com", "kafan.cn", "taobao.com", "sina.com", "sina.cn");
 var SAFE = "#C9F7E8";
-var UNKNOWN = "#FFEAEA"; //未知站点推荐值：#D3ADFF
+var UNKNOWN = "#D3ADFF"; //未知站点推荐值：#D3ADFF
 var DANGEROUS_A = "#FFEAEA"; //普通危险
 var DANGEROUS_Z = "#F99F9F"; //严重危险
 var target = ".urlbar-input-box";
