@@ -7,7 +7,7 @@
 // @license        MIT License
 // @charset        UTF-8
 // @version        2015.12.1
-// @version        1.0
+// @version        2.0
 // @reviewURL    http://bbs.kafan.cn/thread-1867072-1-1.html
 // ==/UserScript==
 var whiteList = new Array("baidu.com", "qq.com", "kafan.cn", "taobao.com", "sina.com", "sina.cn");
