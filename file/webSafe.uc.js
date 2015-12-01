@@ -10,7 +10,7 @@
 // @version        1.0
 // @reviewURL    http://bbs.kafan.cn/thread-1867072-1-1.html
 // ==/UserScript==
-var whiteList = ("");
+var whiteList = new Array("baidu.com", "qq.com", "kafan.cn", "taobao.com", "sina.com", "sina.cn");
 var SAFE = "#C9F7E8";
 var UNKNOWN = "#FFEAEA"; //未知站点推荐值：#D3ADFF
 var DANGEROUS_A = "#FFEAEA"; //普通危险
@@ -33,12 +33,16 @@ setColor(SAFE);
         //console.log("***"+addUrl+"***");
         if(addUrl != null && addUrl != ""){ //地址要正确才能继续查询
             var score = getMapScore(addUrl);
+            //console.log(inWhiteList(addUrl));
+            if(inWhiteList(addUrl)) score=100;
             if(score == -1){ // 没有找到
                 var destURL = "http://tool.chinaz.com/webscan/?host="+addUrl;
                 GetScore(destURL);
             }else{
                 setColorWithScore(score);
             }
+        }else{
+            console.log("安全监测不支持:"+gcurTab.contentDocument.location.href);
         }
     }
     function removefunc(e){
@@ -57,9 +61,9 @@ setColor(SAFE);
             return null;
     }
     function GetScore(dirURL){ // 在 不在map中的时候，请求获得分数，并且加入map
-        console.log("start........");
+        console.log("start...with..."+addUrl);
         var xhr2 = new XMLHttpRequest();
-        xhr2.open('GET', dirURL, false);
+        xhr2.open('GET', dirURL, true);
         xhr2.onreadystatechange=function() {
             if(xhr2.readyState == 4){
                 if(xhr2.status == 200){
@@ -109,6 +113,15 @@ setColor(SAFE);
         console.log(outStr);
     }
 })();
+function inWhiteList(url){
+    var length = whiteList.length;
+    for(var i = 0; i < length; i++){
+        if(url.indexOf(whiteList[i]) > -1)
+            return true;
+    }
+    //console.log(url+" not  in ");
+    return false;
+}
 function setColor(cccolor){ //上色
     var node = document.getElementById("urlbar");
     node.style = addStyle(target+"{border-radius: 13px;padding: 0 2px !important;margin: 0 !important;\
