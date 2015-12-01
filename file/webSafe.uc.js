@@ -7,7 +7,7 @@
 // @license        MIT License
 // @charset        UTF-8
 // @version        2015.12.1
-// @version        1.0
+// @version        3.0
 // @reviewURL    http://bbs.kafan.cn/thread-1867072-1-1.html
 // ==/UserScript==
 var whiteList = new Array("baidu.com", "qq.com", "kafan.cn", "taobao.com", "sina.com", "sina.cn");
@@ -16,33 +16,56 @@ var UNKNOWN = "#D3ADFF"; //未知站点推荐值：#D3ADFF
 var DANGEROUS_A = "#FFEAEA"; //普通危险
 var DANGEROUS_Z = "#F99F9F"; //严重危险
 var target = ".urlbar-input-box";
-let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-
-Cu.import("resource://gre/modules/devtools/Console.jsm"); //使用了这个才能使用console
-setColor(SAFE);
-(function () {
-    var map = {};
+var Safemap = {};
+(function(){
+    let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+    Cu.import("resource://gre/modules/devtools/Console.jsm"); //使用了这个才能使用console
+    setColor(SAFE);
     var gcurTab;
-    var addUrl;
     var container = gBrowser.tabContainer;
-    container.addEventListener("TabSelect", func, false); //注意多次触发问题-选择
     gBrowser.addEventListener("DOMContentLoaded", func, false); // 载入事件
+    container.addEventListener("TabSelect", func, false); //注意多次触发问题-选择
     container.addEventListener("TabClose", removefunc, false); //关闭事件-移除
+    
     function func(e){
-        addUrl = getMainUrl();
-        //console.log("***"+addUrl+"***");
-        if(addUrl != null && addUrl != ""){ //地址要正确才能继续查询
-            var score = getMapScore(addUrl);
-            //console.log(inWhiteList(addUrl));
-            if(inWhiteList(addUrl)) score=100;
-            if(score == -1){ // 没有找到
-                var destURL = "http://tool.chinaz.com/webscan/?host="+addUrl;
-                GetScore(destURL);
+        if(e.target.baseURI.indexOf("http") == 0 || e.type == "TabSelect" || e.type == "TabClose"){
+            //DOMContentLoaded--->从中排除掉非https?请求【chrome://】
+            var mainUrl = getMainUrl();
+            //console.log("***"+mainUrl+"***");
+            if(mainUrl != null && mainUrl != ""){ //地址要正确才能继续查询
+                dealHttp(mainUrl);
             }else{
-                setColorWithScore(score);
+                console.log("安全监测不支持:"+gcurTab.contentDocument.location.href);
             }
+        }
+    }
+    function dealHttp(dealUrl){
+        var score = getMapScore(dealUrl);
+        //console.log(inWhiteList(dealUrl));
+        if(inWhiteList(dealUrl)) score=100;
+        if(score == -1){ // 没有找到
+            var endURL = "http://tool.chinaz.com/webscan/?host="+dealUrl;
+            (function GetScore(dirURL, addUrl){ // 在 不在Safemap中的时候，请求获得分数，并且加入Safemap
+                console.log("start...with..."+addUrl);
+                var xhr2 = new XMLHttpRequest();
+                xhr2.open('GET', dirURL, true);
+                xhr2.onreadystatechange=function() {
+                    if(xhr2.readyState == 4){
+                        if(xhr2.status == 200){
+                            var endhtmls = xhr2.responseText;
+                            var reg = new RegExp("\"score\":([\\d]*)", "g");
+                            var result = reg.exec(endhtmls); result = reg.exec(endhtmls); //第二次的才是真正结果
+                            var score = result[1]; //第一个括号中的值
+                            setColorWithScore(score, true);
+                            addIntoMap(addUrl, score);
+                        }
+                        console.log("end..........");
+                    }
+                }
+                xhr2.send(); 
+            })(endURL, dealUrl);
         }else{
-            console.log("安全监测不支持:"+gcurTab.contentDocument.location.href);
+            setColorWithScore(score);
         }
     }
     function removefunc(e){
@@ -50,46 +73,35 @@ setColor(SAFE);
         removefromMap(removeUrl);
     }
     function getMainUrl(){ // 当前URL转为域名URL【http//:www.baidu.com/xxx/x.x/xx.xxx】-->【www.baidu.com】
+        var mainUrl;
         gcurTab = gBrowser.getBrowserForTab(gBrowser.selectedTab);
-        addUrl = gcurTab.contentDocument.location.href+"";
+        mainUrl = gcurTab.contentDocument.location.href+"";
         setColor(SAFE); //先设定个默认值，如果查询出来了在改变就是了
         var regH = new RegExp("[^/]+//([^/]+)/"); // 地址中必须要有.的存在，否则不是http地址：about:config chrome://xxx/xxx
-        regH.test(addUrl);
-        if(addUrl.indexOf(".") > -1)
-            return RegExp.$1;
+        regH.test(mainUrl);
+        mainUrl = RegExp.$1;
+        var index = mainUrl.indexOf(".");
+        if(index > -1){
+            var tmp = mainUrl.split(".");
+            if(tmp[3] != null) // 表明是4段地址类型的:www0.lenovo1.com2.cn3
+                mainUrl = mainUrl.substring(index+1, mainUrl.length);
+            return mainUrl;
+        }
         else
             return null;
     }
-    function GetScore(dirURL){ // 在 不在map中的时候，请求获得分数，并且加入map
-        console.log("start...with..."+addUrl);
-        var xhr2 = new XMLHttpRequest();
-        xhr2.open('GET', dirURL, true);
-        xhr2.onreadystatechange=function() {
-            if(xhr2.readyState == 4){
-                if(xhr2.status == 200){
-                    var endhtmls = xhr2.responseText;
-                    var reg = new RegExp("\"score\":([\\d]*)", "g");
-                    var result = reg.exec(endhtmls); result = reg.exec(endhtmls); //第二次的才是真正结果
-                    var score = result[1]; //第一个括号中的值
-                    setColorWithScore(score, true);
-                    addIntoMap(addUrl, score);
-                }
-                console.log("end..........");
-            }
-        }
-        xhr2.send(); 
-    }
+    
     function addIntoMap(url, score){ //插入分数
-        map[url] = score;
+        Safemap[url] = score;
     }
-    function getMapScore(url){ //查找map获得分数，没有返回-1
-        if(map[url] == null)
+    function getMapScore(url){ //查找Safemap获得分数，没有返回-1
+        if(Safemap[url] == null)
             return -1;
         else
-            return map[url];
+            return Safemap[url];
     }
     function removefromMap(url){ //Tab关闭的时候remove掉
-        map[url] = null;
+        Safemap[url] = null;
     }
     function setColorWithScore(score, flag){ // 根据分数直接上色
         var outStr="";
@@ -112,26 +124,27 @@ setColor(SAFE);
         }
         console.log(outStr);
     }
-})();
-function inWhiteList(url){
-    var length = whiteList.length;
-    for(var i = 0; i < length; i++){
-        if(url.indexOf(whiteList[i]) > -1)
-            return true;
+
+    function inWhiteList(url){
+        var length = whiteList.length;
+        for(var i = 0; i < length; i++){
+            if(url.indexOf(whiteList[i]) > -1)
+                return true;
+        }
+        //console.log(url+" not  in ");
+        return false;
     }
-    //console.log(url+" not  in ");
-    return false;
-}
-function setColor(cccolor){ //上色
-    var node = document.getElementById("urlbar");
-    node.style = addStyle(target+"{border-radius: 13px;padding: 0 2px !important;margin: 0 !important;\
-            background-color: "+cccolor+" !important; border: none !important;\
-            border-right: 0px solid rgb(235, 235, 235) !important;}");
-}
-function addStyle(css) { //添加CSS的代码--copy的
-    var pi = document.createProcessingInstruction(
-        'xml-stylesheet',
-        'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
-    );
-    return document.insertBefore(pi, document.documentElement);
-}
+    function setColor(cccolor){ //上色
+        var node = document.getElementById("urlbar");
+        node.style = addStyle(target+"{border-radius: 13px;padding: 0 2px !important;margin: 0 !important;\
+                background-color: "+cccolor+" !important; border: none !important;\
+                border-right: 0px solid rgb(235, 235, 235) !important;}");
+    }
+    function addStyle(css) { //添加CSS的代码--copy的
+        var pi = document.createProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/css" href="data:text/css;utf-8,' + encodeURIComponent(css) + '"'
+        );
+        return document.insertBefore(pi, document.documentElement);
+    }
+})()
