@@ -7,7 +7,11 @@
 // @license        MIT License
 // @charset        UTF-8
 // @version        2015.12.1
-// @version        3.0
+// @version        4.0 
+// @note           4.0 修正：在存在多个相同域名时，关闭其中一个导致重新读取数据
+// @note           3.0 改变函数结构，更有条理
+// @note           2.0 修正CSS和白名单
+// @note           1.0 初步建立脚本数据
 // @reviewURL    http://bbs.kafan.cn/thread-1867072-1-1.html
 // ==/UserScript==
 var whiteList = new Array("baidu.com", "qq.com", "kafan.cn", "taobao.com", "sina.com", "sina.cn");
@@ -17,6 +21,7 @@ var DANGEROUS_A = "#FFEAEA"; //普通危险
 var DANGEROUS_Z = "#F99F9F"; //严重危险
 var target = ".urlbar-input-box";
 var Safemap = {};
+var Safemap_count={};
 (function(){
     let { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
     Cu.import("resource://gre/modules/devtools/Console.jsm"); //使用了这个才能使用console
@@ -26,7 +31,7 @@ var Safemap = {};
     gBrowser.addEventListener("DOMContentLoaded", func, false); // 载入事件
     container.addEventListener("TabSelect", func, false); //注意多次触发问题-选择
     container.addEventListener("TabClose", removefunc, false); //关闭事件-移除
-    
+    content.document.addEventListener("onload", function(){alert("loding,,,")}, false);
     function func(e){
         if(e.target.baseURI.indexOf("http") == 0 || e.type == "TabSelect" || e.type == "TabClose"){
             //DOMContentLoaded--->从中排除掉非https?请求【chrome://】
@@ -43,7 +48,7 @@ var Safemap = {};
         var score = getMapScore(dealUrl);
         //console.log(inWhiteList(dealUrl));
         if(inWhiteList(dealUrl)) score=100;
-        if(score == -1){ // 没有找到
+        if(score == -1){ // 不存在该记录--->从网址获取
             var endURL = "http://tool.chinaz.com/webscan/?host="+dealUrl;
             (function GetScore(dirURL, addUrl){ // 在 不在Safemap中的时候，请求获得分数，并且加入Safemap
                 console.log("start...with..."+addUrl);
@@ -56,7 +61,7 @@ var Safemap = {};
                             var reg = new RegExp("\"score\":([\\d]*)", "g");
                             var result = reg.exec(endhtmls); result = reg.exec(endhtmls); //第二次的才是真正结果
                             var score = result[1]; //第一个括号中的值
-                            setColorWithScore(score, true);
+                            setColorWithScore(score, true); //可能存在空值""
                             addIntoMap(addUrl, score);
                         }
                         console.log("end..........");
@@ -93,6 +98,8 @@ var Safemap = {};
     
     function addIntoMap(url, score){ //插入分数
         Safemap[url] = score;
+        if(Safemap_count[url] == null) Safemap_count[url]=0;
+        Safemap_count[url] = Safemap_count[url]+1;
     }
     function getMapScore(url){ //查找Safemap获得分数，没有返回-1
         if(Safemap[url] == null)
@@ -101,9 +108,14 @@ var Safemap = {};
             return Safemap[url];
     }
     function removefromMap(url){ //Tab关闭的时候remove掉
-        Safemap[url] = null;
+        if(Safemap_count[url] == 1){ //只有在count为1的时候才删除该节点【避免多个相同域名中关闭其中一个....】，并且countUrl = null
+            Safemap[url] = null;
+            Safemap_count[url] = null;
+        }else{
+            Safemap_count[url] = Safemap_count[url]-1;
+        }
     }
-    function setColorWithScore(score, flag){ // 根据分数直接上色
+    function setColorWithScore(score, flag){ // 根据分数直接上色,flag存在表示是从网页获取的
         var outStr="";
         if(flag != null) outStr += "网页获取";
          if(score != ""){ // 正则成功=（1.有值（>30或者<30）2.空的string）
