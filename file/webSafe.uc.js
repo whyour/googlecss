@@ -7,10 +7,7 @@
 // @license        MIT License
 // @charset        UTF-8
 // @version        2015.12.1
-// @version        4.0 修正相同网站关闭其中一个需要重载的情况
-// @note           3.0 修正网站之间串号的情况
-// @note           2.0 修正白名单和部分CSS的问题
-// @note           1.0 脚本初建
+// @version        3.0
 // @reviewURL    http://bbs.kafan.cn/thread-1867072-1-1.html
 // ==/UserScript==
 var whiteList = new Array("baidu.com", "qq.com", "kafan.cn", "taobao.com", "sina.com", "sina.cn");
@@ -31,6 +28,10 @@ var Safemap_count = {};
     container.addEventListener("TabSelect", func, false); //注意多次触发问题-选择
     container.addEventListener("TabClose", removefunc, false); //关闭事件-移除
     
+    function removefunc(e){
+        var removeUrl = getMainUrl();
+        removefromMap(removeUrl);
+    }
     function func(e){
         if(e.target.baseURI.indexOf("http") == 0 || e.type == "TabSelect" || e.type == "TabClose"){
             //DOMContentLoaded--->从中排除掉非https?请求【chrome://】
@@ -44,9 +45,9 @@ var Safemap_count = {};
         }
     }
     function dealHttp(dealUrl){
-        var score = getMapScore(dealUrl);
+        var score = getMapScore(dealUrl); // 查询过的旧数据查询
         //console.log(inWhiteList(dealUrl));
-        if(inWhiteList(dealUrl)) score=100;
+        if(inWhiteList(dealUrl)) score=100; // 白名单处理
         if(score == -1){ // 没有找到
             var endURL = "http://tool.chinaz.com/webscan/?host="+dealUrl;
             (function GetScore(dirURL, addUrl){ // 在 不在Safemap中的时候，请求获得分数，并且加入Safemap
@@ -60,8 +61,14 @@ var Safemap_count = {};
                             var reg = new RegExp("\"score\":([\\d]*)", "g");
                             var result = reg.exec(endhtmls); result = reg.exec(endhtmls); //第二次的才是真正结果
                             var score = result[1]; //第一个括号中的值
-                            setColorWithScore(score, true);
-                            addIntoMap(addUrl, score);
+                            if(score != ""){ // 正则成功=（1.有值（>30或者<30）2.空的string）
+                                setColorWithScore(score, true);
+                                addIntoMap(addUrl, score);
+                            }else{
+                                console.log("失败，没有改网站的数据，尝试查询该网站 "+dealUrl+" 备案信息");
+                                getRecord(dealUrl); // 通过备案信息来设置站点信息
+                            }
+                            
                         }
                         console.log("end..........");
                     }
@@ -71,10 +78,6 @@ var Safemap_count = {};
         }else{
             setColorWithScore(score);
         }
-    }
-    function removefunc(e){
-        var removeUrl = getMainUrl();
-        removefromMap(removeUrl);
     }
     function getMainUrl(){ // 当前URL转为域名URL【http//:www.baidu.com/xxx/x.x/xx.xxx】-->【www.baidu.com】
         var mainUrl;
@@ -94,7 +97,31 @@ var Safemap_count = {};
         else
             return null;
     }
-    
+    function getRecord(dealUrl){
+        var endURL = "http://tool.chinaz.com/beian.aspx?s="+dealUrl;
+        (function GetScore(dirURL, addUrl){ // 在 不在Safemap中的时候，请求获得分数，并且加入Safemap
+            console.log("备案查询开始 with "+addUrl);
+            var xhr3 = new XMLHttpRequest();
+            xhr3.open('GET', dirURL, true);
+            xhr3.onreadystatechange=function() {
+                if(xhr3.readyState == 4){
+                    if(xhr3.status == 200){
+                        var endhtmls = xhr3.responseText;
+                        var reg = new RegExp("未备案", "g");//"未备案"
+                        var result = reg.exec(endhtmls);
+                        var score = -1; //表明未知
+                        if(result == null){ //已经备案
+                            score = 100; //备案成功的数据设为100
+                        }
+                        setColorWithScore(score, true);
+                        addIntoMap(addUrl, score);
+                    }
+                    console.log("备案查询结束");
+                }
+            }
+            xhr3.send(); 
+        })(endURL, dealUrl);
+    }
     function addIntoMap(url, score){ //插入分数
         if(Safemap_count[url] == null){ //如果之前不存在则添加，存在则不操作
             Safemap[url] = score;
@@ -115,28 +142,6 @@ var Safemap_count = {};
             Safemap_count[url] = Safemap_count[url] -1;
         }
     }
-    function setColorWithScore(score, flag){ // 根据分数直接上色
-        var outStr="";
-        if(flag != null) outStr += "网页获取";
-         if(score != ""){ // 正则成功=（1.有值（>30或者<30）2.空的string）
-            if(score < 10){
-                outStr += "成功， 分数："+score;
-                setColor(DANGEROUS_Z);
-            }
-            else if(score < 30){
-                outStr += "成功， 分数："+score;
-                setColor(DANGEROUS_A);
-            }else{
-                outStr += "成功， 分数："+score;
-                setColor(SAFE);
-            }
-        }else{
-            outStr += "失败，没有改网站的数据";
-            setColor(UNKNOWN);
-        }
-        console.log(outStr);
-    }
-
     function inWhiteList(url){
         var length = whiteList.length;
         for(var i = 0; i < length; i++){
@@ -145,6 +150,21 @@ var Safemap_count = {};
         }
         //console.log(url+" not  in ");
         return false;
+    }
+    function setColorWithScore(score, flag){ // 根据分数直接上色
+        var outStr="";
+        if(flag != null) outStr += "网页获取";
+        if(score >30){
+            setColor(SAFE);
+        }else if(score > 10){
+            setColor(DANGEROUS_A);
+        }else if(score > 0){
+            setColor(DANGEROUS_Z);
+        }else{
+            setColor(UNKNOWN); //-1表示站点信息未知
+        }
+        outStr += "成功， 分数："+score;
+        console.log(outStr);
     }
     function setColor(cccolor){ //上色
         var node = document.getElementById("urlbar");
