@@ -2,7 +2,7 @@
 使用地址:
 https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/img0/kafan.png
 https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/img1/icon.jpg
-https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/file/webSafe.uc.js
+https://coding.net/u/zb227/p/zbImg/git/raw/newMaster/file/WeatherForecast.user.js
 git的使用方式：
 新建文件
 GUI->Remote->Add....(XXXXXXXXXXXXXXX)
