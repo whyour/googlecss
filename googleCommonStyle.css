@@ -306,8 +306,7 @@ a em {
     }
 }
 #center_col>*{
-    padding-left:166px;
-    padding-right:8%;
+    padding: 0 166px;
 }
 .bkWMgd>div:not([class]){
     width: 730px;
